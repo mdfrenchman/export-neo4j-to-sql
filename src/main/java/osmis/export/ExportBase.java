@@ -19,6 +19,7 @@ import java.util.stream.Stream;
 public class ExportBase {
 
     protected Stream<Output> exportToSql(Result data, String tableName, Long batchSize, String connString) throws Exception {
-        return Stream.of(new Output(true, batchSize, 0, 0, 0, tableName, "message"));
+        Output metrics = new Output(tableName, batchSize);
+        return Stream.of(metrics);
     }
 }
