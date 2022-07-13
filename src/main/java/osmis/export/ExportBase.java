@@ -10,7 +10,8 @@ import com.microsoft.sqlserver.jdbc.SQLServerConnection;
 import com.microsoft.sqlserver.jdbc.SQLServerPreparedStatement;
 
 import java.sql.DriverManager;
-
+import java.sql.Timestamp;
+import java.time.ZonedDateTime;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -55,7 +56,16 @@ public class ExportBase {
                 
                 // Question: is there a performance penalty for using setObject since it's infering TYPE?
                 for (int columnIndex = 0; columnIndex < columns.size(); columnIndex++) {
+                    // map types from neo4j -> java -> sqlserver
+                    if (map.get(columns.get(columnIndex)) instanceof java.time.ZonedDateTime)
+                    {
+                        ZonedDateTime dt = ((ZonedDateTime)map.get(columns.get(columnIndex)));
+                        exportStatement.setDateTime(columnIndex+1,  Timestamp.from(dt.toInstant()));
+                    } else if (map.get(columns.get(columnIndex)) instanceof Boolean) {
+                        exportStatement.setBoolean(columnIndex+1, ((Boolean)map.get(columns.get(columnIndex))).booleanValue());
+                    } else {
                         exportStatement.setObject(columnIndex+1, map.get(columns.get(columnIndex)));
+                    }
                 }
                 exportStatement.addBatch();
                 
