@@ -1,0 +1,153 @@
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0
+                      http://maven.apache.org/xsd/maven-4.0.0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+
+  <groupId>org.calibresys.osmis</groupId>
+  <artifactId>osmis.exports</artifactId>
+  <version>0.0.0.1</version>
+
+  <packaging>jar</packaging>
+  <name>Neo4j to SQLServer</name>
+  <description>Neo4j stored procedures to export data from graph to ms-sqlserver.</description>
+
+  <properties>
+    <java.version>11</java.version>
+    <maven.compiler.source>${java.version}</maven.compiler.source>
+    <maven.compiler.target>${java.version}</maven.compiler.target>
+
+    <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+    <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
+    <neo4j.version>4.4.7</neo4j.version>
+    <neo4j-java-driver.version>4.4.5</neo4j-java-driver.version>
+    <junit-jupiter.version>5.7.0</junit-jupiter.version>
+    <maven-shade-plugin.version>3.2.4</maven-shade-plugin.version>
+    <maven-compiler-plugin.version>3.8.1</maven-compiler-plugin.version>
+    <assertj.version>3.18.1</assertj.version>
+    <maven-surefire-plugin.version>2.22.2</maven-surefire-plugin.version>
+  </properties>
+  
+  
+
+  <repositories>
+    <repository>
+      <snapshots>
+        <enabled>false</enabled>
+      </snapshots>
+      <id>neo4j-enterprise</id>
+      <name>Neo4j Enterprise Artifacts</name>
+      <url>http://m2.neo4j.com/enterprise</url>
+    </repository>
+    
+  </repositories>
+  
+  <dependencies>
+    <dependency>
+      <!-- This gives us the Procedure API our runtime code uses.
+           We have a `provided` scope on it, because when this is
+           deployed in a Neo4j Instance, the API will be provided
+           by Neo4j. If you add non-Neo4j dependencies to this
+           project, their scope should normally be `compile` -->
+      <groupId>org.neo4j</groupId>
+      <artifactId>neo4j</artifactId>
+      <version>${neo4j.version}</version>
+      <scope>provided</scope>
+    </dependency>
+
+    <dependency>
+      <groupId>com.neo4j</groupId>
+      <artifactId>neo4j-enterprise</artifactId>
+      <version>${neo4j.version}</version>
+      <scope>provided</scope>
+    </dependency>
+
+    <!-- Test Dependencies -->
+    <dependency>
+      <!-- This is used for a utility that lets us start Neo4j with
+           a specific Procedure, which is nice for writing tests. -->
+      <groupId>org.neo4j.test</groupId>
+      <artifactId>neo4j-harness</artifactId>
+      <version>${neo4j.version}</version>
+      <scope>test</scope>
+    </dependency>
+
+    <dependency>
+      <!-- Used to send cypher statements to our procedure. -->
+      <groupId>org.neo4j.driver</groupId>
+      <artifactId>neo4j-java-driver</artifactId>
+      <version>${neo4j-java-driver.version}</version>
+      <scope>test</scope>
+    </dependency>
+
+    <dependency>
+      <groupId>org.junit.jupiter</groupId>
+      <artifactId>junit-jupiter-engine</artifactId>
+      <version>${junit-jupiter.version}</version>
+      <scope>test</scope>
+    </dependency>
+
+    <dependency>
+      <groupId>org.assertj</groupId>
+      <artifactId>assertj-core</artifactId>
+      <version>${assertj.version}</version>
+      <scope>test</scope>
+    </dependency>
+
+    <dependency>
+        <groupId>com.microsoft.sqlserver</groupId>
+        <artifactId>mssql-jdbc</artifactId>
+        <version>10.2.1.jre${java.version}</version>
+        <scope>compile</scope>
+    </dependency>
+  </dependencies>
+  
+
+  <build>
+    <resources>
+
+    </resources>
+    <plugins>
+      <plugin>
+        <artifactId>maven-compiler-plugin</artifactId>
+        <version>${maven-compiler-plugin.version}</version>
+      </plugin>
+      <plugin>
+            <artifactId>maven-surefire-plugin</artifactId>
+            <version>${maven-surefire-plugin.version}</version>
+      </plugin>
+      <plugin>
+        <!-- This generates a jar-file with our procedure code,
+             plus any dependencies marked as `compile` scope.
+             This should then be deployed in the `plugins` directory
+             of each Neo4j instance in your deployment.
+             After a restart, the procedure is available for calling. -->
+        <artifactId>maven-shade-plugin</artifactId>
+        <version>${maven-shade-plugin.version}</version>
+        <configuration>
+          <createDependencyReducedPom>false</createDependencyReducedPom>
+        </configuration>
+        <executions>
+          <execution>
+            <phase>package</phase>
+            <goals>
+              <goal>shade</goal>
+            </goals>
+            <configuration>
+                <filters>
+                    <filter>
+                        <artifact>*:*</artifact>
+                        <excludes>
+                          <exclude>META-INF/*.SF</exclude>
+                          <exclude>META-INF/*.DSA</exclude>
+                          <exclude>META-INF/*.RSA</exclude>
+                          <exclude>META-INF/*.MF</exclude>
+                        </excludes>
+                    </filter>
+                 </filters>
+            </configuration>
+          </execution>
+        </executions>
+      </plugin>
+    </plugins>
+  </build>
+</project>
