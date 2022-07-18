@@ -2,7 +2,6 @@ package osmis.export;
 
 import org.neo4j.graphdb.*;
 import org.neo4j.procedure.*;
-import org.neo4j.procedure.Mode;
 
 import org.neo4j.logging.Log;
 
@@ -27,9 +26,18 @@ public class ExportBase {
 
     @Context
     public GraphDatabaseService db;
+    
+    @Context
+    public TerminationGuard guard;
 
+
+    protected static String connectionUrl = "";
+    protected static Long defaultBatchSize = 5000L;
+
+    
     protected Stream<Output> exportToSql(Result data, String tableName, Long batchSize, String connString) throws Exception {
-        String connectionUrl = connString + ";useBulkCopyForBatchInsert=true";
+        guard.check();
+        ExportBase.connectionUrl = connString + ";useBulkCopyForBatchInsert=true";
         Output metrics = new Output(tableName, batchSize);
 
         log.info("Starting Export");
@@ -37,14 +45,14 @@ public class ExportBase {
         List<String> columns = data.columns();
 
         String insertSql = String.format("insert into %s (%s) values (%s)", tableName, columns.stream().collect(Collectors.joining(",")), columns.stream().map(s -> {return "?";}).collect(Collectors.joining(", ")));
+        // initial start time, needed for total run duration on failure.
+        long start = System.currentTimeMillis();
 
         try (
             SQLServerConnection conn = DriverManager.getConnection(connectionUrl).unwrap(SQLServerConnection.class);
             SQLServerPreparedStatement exportStatement = conn.prepareStatement(insertSql).unwrap(SQLServerPreparedStatement.class);
         ){
             int rowsInBatchCount = 0;
-            long start = 0L;
-
             while (data.hasNext()){
                 if (metrics.recordsExported % batchSize == 0 ) {
                     start = System.currentTimeMillis();
@@ -85,11 +93,16 @@ public class ExportBase {
                 log.info("Finished batch " + metrics.batchCount + ". Submitted " + rowsInBatchCount + " rows. Time taken : " + (end - start) + " milliseconds.");
                 rowsInBatchCount = 0;
             }
-
+            metrics.success(); 
             exportStatement.closeOnCompletion();
             conn.close();
         }
-
+        catch (Exception ex) {
+         metrics.completedSuccessfully = false;
+         metrics.message = ex.getMessage();
+         metrics.runDuration = System.currentTimeMillis()-start;   
+        }
         return Stream.of(metrics);
+
     }
 }

@@ -33,4 +33,11 @@ public class Output {
             this.message = message;
         }
     }
+
+    public void success(){
+        this.completedSuccessfully = true;
+        if (message.trim().isBlank()) {
+            this.message = String.format("Exported %d records to %s, in %d batches of size %d. Time to export: %d milliseconds. " + (completedSuccessfully ? "Export completed successfully." : "Export failed to complete."),recordsExported, tableName, batchCount, batchSize, runDuration);
+        }
+    }
 }
