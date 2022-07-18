@@ -16,7 +16,7 @@ import java.util.Map;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-public class ExportToSql {
+public class ExportToSql extends ExportBase {
     @Context
     public Log log;
 
@@ -28,7 +28,8 @@ public class ExportToSql {
 
     @Procedure(name = "osmis.export.advanced", mode = Mode.READ)
     @Description("Any query, any table, any connection string; GO WILD. Procedure is defined as READ-ONLY because it, well ... you know, exports things.")
-    public Stream<Output> advanced(@Name("query") String query, @Name("tableName") String tableName, @Name("batchSize") Long batchSize, @Name("connString") String connString) { //throws Exception {
-        return Stream.of(new Output(true, batchSize, 0, 0, 0, tableName, "message"));
-    }
+    public Stream<Output> advanced(@Name("query") String query, @Name("tableName") String tableName, @Name("batchSize") Long batchSize, @Name("connString") String connString) throws Exception {
+        Result result = tx.execute(query);
+        return super.exportToSql(result, tableName, batchSize, connString);
+    }    
 }

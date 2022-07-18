@@ -9,6 +9,16 @@ public class Output {
     public Long batchCount;
     public Long recordsExported;
 
+    public Output(String tableName, long batchSize) {
+        this.completedSuccessfully = false;
+        this.tableName = tableName;
+        this.batchCount = 0L;
+        this.batchSize = batchSize;
+        this.recordsExported = 0L;
+        this.runDuration = 0L;
+        this.message = "";
+    }
+
     public Output(boolean completedSuccessfully, long batchSize, long batchCount, long recordsExported, long runDuration, String tableName, String message) {
         this.completedSuccessfully = completedSuccessfully;
         this.tableName = tableName;
