@@ -6,9 +6,11 @@ import org.neo4j.procedure.*;
 import org.neo4j.logging.Log;
 
 import com.microsoft.sqlserver.jdbc.SQLServerConnection;
+import com.microsoft.sqlserver.jdbc.SQLServerException;
 import com.microsoft.sqlserver.jdbc.SQLServerPreparedStatement;
 
 import java.sql.DriverManager;
+import java.sql.SQLException;
 import java.sql.Timestamp;
 import java.time.ZonedDateTime;
 import java.util.List;
@@ -97,11 +99,17 @@ public class ExportBase {
             exportStatement.closeOnCompletion();
             conn.close();
         }
-        catch (Exception ex) {
-         metrics.completedSuccessfully = false;
-         metrics.message = ex.getMessage();
-         metrics.runDuration = System.currentTimeMillis()-start;   
+        catch (SQLServerException ex) {
+            metrics.completedSuccessfully = false;
+            metrics.message = ex.getMessage();
+            metrics.runDuration = System.currentTimeMillis()-start;  
         }
+        catch (Exception ex) {
+            metrics.completedSuccessfully = false;
+            metrics.message = ex.getMessage();
+            metrics.runDuration = System.currentTimeMillis()-start;  
+            throw ex;
+        }        
         return Stream.of(metrics);
 
     }
