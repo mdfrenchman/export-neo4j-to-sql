@@ -1,5 +1,6 @@
 package osmis.graphSqlConnector.fromSql;
 
+import org.neo4j.cypher.internal.ast.Yield;
 import org.neo4j.graphdb.*;
 import org.neo4j.procedure.*;
 
@@ -58,19 +59,27 @@ public class ImportBase extends ConnectorBase {
             while (result.next()) {
                 for (int i = 0; i < meta.getColumnCount(); i++) {
                     // REF for type mappings as ints: https://docs.oracle.com/javase/8/docs/api/constant-values.html#java.sql.Types.TIMESTAMP
-                    if (meta.getColumnType(i+1) == 93) {
-                        LocalDateTime lt = LocalDateTime.ofInstant(result.getTimestamp(i+1).toInstant(), ZoneId.of(("UTC")));
-                        //n.setProperty(meta.getColumnName(i+1), lt.atZone(ZoneId.of("UTC")));
-                        output.put(meta.getColumnName(i+1), lt.atZone(ZoneId.of("UTC"))); 
-                    } else if (meta.getColumnType(i+1) == -7) {
-                        //n.setProperty(meta.getColumnName(i+1), Boolean.valueOf(result.getBoolean(i+1)));
-                        output.put(meta.getColumnName(i+1), Boolean.valueOf(result.getBoolean(i+1)));
-                    } else {
-                        //n.setProperty(meta.getColumnName(i+1), result.getObject(i+1));
-                        output.put(meta.getColumnName(i+1), result.getObject(i+1));
-                        //log.info("%s : %s", meta.getColumnName(i+1), result.getObject(i+1));
-                    }
                     
+                    switch (meta.getColumnType(i+1)) {
+                        case java.sql.Types.TIMESTAMP:
+                            LocalDateTime lt = LocalDateTime.ofInstant(result.getTimestamp(i+1).toInstant(), ZoneId.of(("UTC")));
+                            //n.setProperty(meta.getColumnName(i+1), lt.atZone(ZoneId.of("UTC")));
+                            output.put(meta.getColumnName(i+1), lt.atZone(ZoneId.of("UTC"))); 
+                            break;
+                        case java.sql.Types.BIT:
+                            //n.setProperty(meta.getColumnName(i+1), Boolean.valueOf(result.getBoolean(i+1)));
+                            output.put(meta.getColumnName(i+1), Boolean.valueOf(result.getBoolean(i+1)));
+                            break;
+                        case java.sql.Types.NUMERIC:
+                            //n.setProperty(meta.getColumnName(i+1), result.getDouble(i+1));
+                            output.put(meta.getColumnName(i+1), result.getDouble(i+1));
+                            break;
+                        default:
+                            //n.setProperty(meta.getColumnName(i+1), result.getObject(i+1));
+                            output.put(meta.getColumnName(i+1), result.getObject(i+1));
+                            //log.info("%s : %s", meta.getColumnName(i+1), result.getObject(i+1));
+                            break;
+                    }
                 }  
                 outputList.add(output);
                 // if (outputList.size() == batchSize.intValue()){
@@ -108,32 +117,52 @@ public class ImportBase extends ConnectorBase {
     }
 
     private Map<String, Object> mapSqlResult(ResultSet result, ResultSetMetaData meta) throws SQLException, Exception {
-        Map<String, Object> output = new HashMap<String, Object>();
-        for (int i = 0; i < meta.getColumnCount(); i++) {
-            // REF for type mappings as ints: https://docs.oracle.com/javase/8/docs/api/constant-values.html#java.sql.Types.TIMESTAMP
-            //log.debug("type: %s ; colIndex: %d", meta.getColumnType(i+1), i+1);
-            if (meta.getColumnType(i+1) == java.sql.Types.TIMESTAMP) {
-                Timestamp ts = result.getTimestamp(i+1);
-                //log.debug("wasNull: %s; ts: %s", result.wasNull(), ts);
-                if (!result.wasNull()) {
-                    LocalDateTime lt = LocalDateTime.ofInstant(ts.toInstant(), ZoneId.of(("UTC")));
-                    //n.setProperty(meta.getColumnName(i+1), lt.atZone(ZoneId.of("UTC")));
-                    output.put(meta.getColumnName(i+1), lt.atZone(ZoneId.of("UTC"))); 
-                    //log.debug("%s : %s (ts is not null)", meta.getColumnName(i+1), ts);
-                } else {
-                    output.put(meta.getColumnName(i+1), null); 
-                    //log.debug("%s : %s (ts is null)", meta.getColumnName(i+1), ts);
+        try {
+            Map<String, Object> output = new HashMap<String, Object>();
+            for (int i = 0; i < meta.getColumnCount(); i++) {
+                // handle null values in the sql data.
+                if (result.wasNull()) {
+                    output.put(meta.getColumnName(i+1), null);
+                    continue;
+                } 
+                // REF for type mappings as ints: https://docs.oracle.com/javase/8/docs/api/constant-values.html#java.sql.Types.TIMESTAMP
+                //log.debug("type: %s ; colIndex: %d", meta.getColumnType(i+1), i+1);
+                switch (meta.getColumnType(i+1)) {
+                    case java.sql.Types.TIMESTAMP:
+                        Timestamp ts = result.getTimestamp(i+1);       
+                        LocalDateTime lt = LocalDateTime.ofInstant(ts.toInstant(), ZoneId.of(("UTC")));
+                        //n.setProperty(meta.getColumnName(i+1), lt.atZone(ZoneId.of("UTC")));
+                        output.put(meta.getColumnName(i+1), lt.atZone(ZoneId.of("UTC"))); 
+                        //log.debug("%s : %s (ts is not null)", meta.getColumnName(i+1), ts);
+                        break;
+                    case java.sql.Types.NUMERIC:
+                        output.put(meta.getColumnName(i+1), result.getFloat(i+1));
+                        break;
+                    case java.sql.Types.BIT:
+                        //n.setProperty(meta.getColumnName(i+1), Boolean.valueOf(result.getBoolean(i+1)));
+                        output.put(meta.getColumnName(i+1), Boolean.valueOf(result.getBoolean(i+1)));
+                        break;
+                    default:
+                        //n.setProperty(meta.getColumnName(i+1), result.getObject(i+1));
+                        output.put(meta.getColumnName(i+1), result.getObject(i+1));
+                        //log.debug("%s : %s", meta.getColumnName(i+1), result.getObject(i+1));
+                        break;
                 }
-            } else if (meta.getColumnType(i+1) == java.sql.Types.BIT) {
-                //n.setProperty(meta.getColumnName(i+1), Boolean.valueOf(result.getBoolean(i+1)));
-                output.put(meta.getColumnName(i+1), Boolean.valueOf(result.getBoolean(i+1)));
-            } else {
-                //n.setProperty(meta.getColumnName(i+1), result.getObject(i+1));
-                output.put(meta.getColumnName(i+1), result.getObject(i+1));
-                //log.debug("%s : %s", meta.getColumnName(i+1), result.getObject(i+1));
+            
             }
+            return output;
+        } catch (SQLServerException e) {
+            log.error("SqlServerException trying to map values on import from sql-server: {0}", e.getSQLServerError().getErrorMessage());
+            throw e;
+        } 
+        catch (SQLException e) {
+            log.error("SQLException trying to map values on import from sql-server {0}", e.getMessage());
+            throw e;
         }
-        return output;
+        catch (Exception e) {
+            log.error("Exception trying to map values on import from sql-server {0}", e.getMessage());
+            throw e;
+        }
     }
     protected Stream<Output> fromSqlBatchToGraph(String sqlQuery, List<Object> sqlParams, String writeQuery, Map<String, Object> writeParams, int batchSize, String connString) {
         guard.check();
@@ -162,16 +191,27 @@ public class ImportBase extends ConnectorBase {
             BatchTransaction batchTx = new BatchTransaction(db, batchSize, log);
             // Process each record as `$data` in the provided writeQuery Cypher.
             while (result.next()) {
-                Map<String, Object> output = mapSqlResult(result, meta);
-                writeParams.put("data", output);
+                try {
+                    writeParams.put("data", mapSqlResult(result, meta));    
+                } catch (SQLServerException e) {
+                    log.error("SqlServerException trying to map values on import from sql-server: {0}", e.getSQLServerError().getErrorMessage());
+                    throw e;
+                } 
+                catch (Exception e) {
+                    log.error("Exception trying to map values on import from sql-server {0}", e.getMessage());
+                    throw e;
+                }
+                
+                
                 batchTx.execute(writeQuery, writeParams);
                 batchTx.increment();
                 count++;
             }
             batchTx.commit();
+            batchTx.close();
             statement.closeOnCompletion();
             conn.close(); 
-            batchTx.close();
+            
             
             metrics.batchCount =  Long.valueOf(batchTx.getCountExecutedBatches());
             metrics.statistics = batchTx.getBatchStatistics().toString(); 

@@ -5,7 +5,7 @@
 
   <groupId>org.calibresys.osmis</groupId>
   <artifactId>osmis.graph2sql</artifactId>
-  <version>0.0.0.6</version>
+  <version>0.0.0.7</version>
 
   <packaging>jar</packaging>
   <name>Neo4j SQLServer Connector</name>

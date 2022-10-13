@@ -14,7 +14,7 @@ import java.util.stream.Stream;
 public class ImportAdvanced extends ImportBase {
     
     @Procedure(name = "osmis.import.testType", mode = Mode.WRITE, eager = true)
-    @Description("DEMO ONLY: Import from the TestType TABLE as an integration demo test.")
+    @Description("DEMO ONLY: Import from the TestType TABLE as an integration demo test. This is a WIP and does not batch yet.")
     public Stream<TestTypePojo> advanced(@Name("sqlQuery") String sqlQuery, @Name("orderedParams") List<Object> orderedParams, @Name("connString") String connString) throws Exception {
         
         return super.getFromSql(sqlQuery, orderedParams, connString, 0).map(m -> new TestTypePojo(m));
