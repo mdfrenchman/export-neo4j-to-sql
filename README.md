@@ -5,7 +5,7 @@
  `CREATE TABLE TestTypes (theString varchar(50), theInt int, theBit bit, theFloat float, theDateTime datetime)`
 
  ## Verification for datetime and boolean conversion
- `CALL osmis.export.advanced("RETURN 'bob' as theString, 1 as theInt, true as theBit, 1.111 as theFloat, datetime() as theDateTime","TestTypes",10, "jdbc:sqlserver://localhost:1433;databaseName=dbTest;user=demoApp;password=demoApp;encrypt=false");`
+ `CALL osmis.export.advanced("RETURN 'bob' as theString, 1 as theInt, true as theBit, 1.111 as theFloat, datetime() as theDateTime","TestTypes",10, "jdbc:sqlserver://localhost:1433;databaseName=dbTest;user=demoApp;password=osmisDemoApp1;encrypt=false");`
 
  ## BigExport TABLE Structure
 `CREATE TABLE BigExport (A0 varchar(50), A1 varchar(50), A2 varchar(50), A3 varchar(50), A4 varchar(50), A5 varchar(50), A6 varchar(50), A7 varchar(50), A8 varchar(50), A9 varchar(50), B0 varchar(50), B1 varchar(50), B2 varchar(50), B3 varchar(50), B4 varchar(50), B5 varchar(50), B6 varchar(50), B7 varchar(50), B8 varchar(50), B9 varchar(50), C0 varchar(50), C1 varchar(50), C2 varchar(50), C3 varchar(50), C4 varchar(50), C5 varchar(50), C6 varchar(50), C7 varchar(50), C8 varchar(50), C9 varchar(50), D0 varchar(50), D1 varchar(50), D2 varchar(50), D3 varchar(50), D4 varchar(50), D5 varchar(50), D6 varchar(50), D7 varchar(50), D8 varchar(50), D9 varchar(50))`

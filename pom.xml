@@ -4,11 +4,11 @@
   <modelVersion>4.0.0</modelVersion>
 
   <groupId>org.calibresys.osmis</groupId>
-  <artifactId>osmis.exports</artifactId>
-  <version>0.0.0.1</version>
+  <artifactId>osmis.graph2sql</artifactId>
+  <version>0.0.0.6</version>
 
   <packaging>jar</packaging>
-  <name>Neo4j to SQLServer</name>
+  <name>Neo4j SQLServer Connector</name>
   <description>Neo4j stored procedures to export data from graph to ms-sqlserver.</description>
 
   <properties>
